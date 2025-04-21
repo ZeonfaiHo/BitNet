@@ -1249,7 +1249,7 @@ class OutputFile:
 
         # TODO: better logic to determine model name
         if params.n_ctx == 4096:
-            name = "bitnet2b_2501"
+            name = "bitnet2b"
         elif params.path_model is not None:
             name = str(params.path_model.parent).split('/')[-1]
 
