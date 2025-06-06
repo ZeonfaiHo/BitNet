@@ -1,2 +1,2 @@
-*.safetensors
-*.pt
+checkpoints/**
+__pycache__

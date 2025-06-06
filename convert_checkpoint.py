@@ -3,7 +3,9 @@
 
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -13,12 +15,12 @@ import torch
 from einops import rearrange
 from safetensors.torch import save_file
 import model
-from pack_weight import convert_weight_int8_to_int2_adsbrain, weight_repack
+from pack_weight import convert_weight_int8_to_int2_adsbrain, weight_repack, convert_weight_int8_to_int2
 
 @torch.inference_mode()
 def convert_ts_checkpoint(
     *,
-    input_dir: str = "",
+    input_path: str = "",
 ) -> None:
 
     config = model.ModelArgs()
@@ -37,8 +39,9 @@ def convert_ts_checkpoint(
 
     def convert_int8_to_int2(weight):
         return weight_repack(convert_weight_int8_to_int2_adsbrain(weight))
+        # return convert_weight_int8_to_int2(weight)
 
-    merged_result = torch.load(f"{input_dir}/model_state.pt", map_location="cpu", mmap=True)
+    merged_result = torch.load(input_path, map_location="cpu", mmap=True)
     int2_result = {}
     fp16_result = {}
     zero = torch.zeros(1).to(torch.bfloat16)
@@ -86,11 +89,12 @@ def convert_ts_checkpoint(
             int2_result[key] = value.clone()
             fp16_result[key] = value.clone()
 
-    print(f"Saving checkpoint to {input_dir}/model_state_int2.pt")
-    torch.save(int2_result, f"{input_dir}/model_state_int2.pt")
+    output_dir = os.path.dirname(input_path)
+    print(f"Saving checkpoint to {output_dir}/model_state_int2.pt")
+    torch.save(int2_result, f"{output_dir}/model_state_int2.pt")
 
-    print(f"Saving checkpoint to {input_dir}/model_state_fp16.pt")
-    torch.save(fp16_result, f"{input_dir}/model_state_fp16.pt")
+    print(f"Saving checkpoint to {output_dir}/model_state_fp16.pt")
+    torch.save(fp16_result, f"{output_dir}/model_state_fp16.pt")
 
 if __name__ == '__main__':
     import argparse
@@ -99,5 +103,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     convert_ts_checkpoint(
-        input_dir=args.input,
+        input_path=args.input,
     )
